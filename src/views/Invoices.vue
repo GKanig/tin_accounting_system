@@ -1,9 +1,10 @@
 <template>
 <div id="main-box">
             <div id="action-buttons" >
-                <a href="insert-invoice.html" class="button">Wprowadź</a>
-                <a href="#" class="button">Modyfikuj</a>
-                <a href="#" class="button">Usuń</a>
+                <a v-on:click="showModify = true" class="button">Wprowadź</a>
+                <!-- <button v-on:click="showModify = true" class="button" >Wprowadź</button> -->
+                <a v-on:click="showModify = true" class="button">Modyfikuj</a>
+                <a v-on:click="deleteInvoices()" class="button">Usuń</a>
                 <input/>
                 <a href="#" class="button">Szukaj</a>
             </div>
@@ -17,21 +18,18 @@
                             <th>Data wystawienia</th>
                             <th>Kwota brutto</th>
                             <th>Kwota netto</th>
-                            <th>Termin płatności</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                                <td>1</td>
-                                <td>F/01/12</td>
-                                <td>Innsoft Sp. z o.o.</td>
-                                <td>02-01-2019</td>
-                                <td>553,50 zł</td>
-                                <td>450,00 zł</td>
-                                <td>02-01-2019</td>
+                        <tr v-for="invoice in invoices" v-bind:key="invoice.id" v-on:click="activeRow(invoice.id, $event)">
+                                <td>{{invoice.id}}</td>
+                                <td>{{invoice.invoiceNo}}</td>
+                                <td>{{invoice.name}}</td>
+                                <td>{{invoice.invoiceDate}}</td>
+                                <td>{{invoice.netPrice}} zł</td>
+                                <td>{{invoice.grossPrice}} zł</td>
                         </tr>
                         <tr class="blank">
-                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -42,16 +40,61 @@
                     </tbody>
                 </table>
             </div>
+            <Invoice :invoiceId="active_invoice[0]" v-if="showModify" @close="showModify = false"/>
         </div>
 </template>
 <script>
+import axios from "axios";
+import Invoice from '@/components/partials/Invoice.vue';
 export default {
-  name: 'home',
+  name: 'invoices',
   components: {
-  }
+      Invoice,
+  },
+  mounted:function(){
+        this.getInvoices() //method1 will execute at pageload
+  },
+  data(){
+        return{
+            invoiceExist: false,
+            invoices: [],
+            active_invoice: [],
+            showModify: false
+        }
+    },
+    methods:{
+        getInvoices() {
+            axios.get(`http://localhost:3128/invoices/${this.$store.state.user.companyId}`).then(res => {
+                this.invoices = res.data.invoices
+            });
+        },
+        activeRow( id, event ){
+            let row = event.target.parentElement
+            if (row.classList.contains("active")){
+                row.classList.remove("active");
+                this.active_invoice.splice( this.active_invoice.indexOf(id), 1 );
+            }else{
+                row.classList.add("active");
+                this.active_invoice.push(id);
+            }
+        },
+        deleteInvoices() {
+            let invoiceId = this.active_invoice.pop()
+            if(window.confirm(`Czy na pewno chcesz usunąć fakturę nr ${invoiceId}`)){
+                axios.delete(`http://localhost:3128/invoice/${invoiceId}`).then(res => {
+                if(res.data.status){
+                    window.alert("Faktura usunięta pomyślnie");
+                    this.getInvoices()
+                }else{
+                    window.alert("Nie udało się usunąc wybranej faktury");
+                }
+            })
+            }
+        }
+    }
 }
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 
 #main-box{
     background-color: white;
@@ -103,6 +146,20 @@ tr.blank td{
     height: unset;
 }
 
+tbody tr:hover {
+    color: white;
+    background-color: #124273;
+}
+
+tbody .active {
+    color: white;
+    background-color: #124273;
+}
+
+tbody .blank:hover {
+    background-color: white;
+}
+
 table tbody tr td:last-child {
     border-right: unset;
 }
@@ -141,12 +198,11 @@ table tbody tr td:last-child {
 }
 
 .data-grid{
-    height:80px;
     overflow-y: auto;
 }
 
 .form table{
-    height: 50%;
+  height: 50%;
 } 
 
 .fixedHeader {
@@ -157,7 +213,7 @@ table tbody tr td:last-child {
     padding: 8px;
     
     *{
-      margin-right: 5px;
+      margin-right: 4px;
     }
 }
 </style>

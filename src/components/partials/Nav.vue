@@ -1,13 +1,13 @@
 <template>
 <div id="menu">
             <div class="vertical-menu">
-                    <a href="#" class="active">Faktury</a>
-                    <a href="#">Produkty</a>
-                    <a href="#">Kontrahenci</a>
+              <nav> 
+                <router-link to="/invoices">Faktury</router-link>
+                <router-link to="/products">Produkty</router-link>
+                <router-link to="/contractor">Kontrachenci</router-link>
+              </nav>
             </div>
-            <a href="#" class="logout-button">
-                Wyloguj
-            </a>
+            <router-link v-on:click="this.$store.state.user = none" class="logout-button" to="/">Wyloguj</router-link>
         </div>
 </template>
 <script>
